@@ -8,13 +8,13 @@ export default function Footer() {
       <div className="max-w-5xl mx-auto px-4 sm:px-6 flex flex-col sm:flex-row items-center justify-between gap-4">
         {/* Attribution */}
         <div className="text-sm text-slate-500 text-center sm:text-left">
-          <span className="text-slate-400 font-medium">Built by [YOUR FULL NAME]</span>
+          <span className="text-slate-400 font-medium">Built by Keshav Varshney</span>
           {' — '}
           <a
-            href="mailto:[your.email@example.com]"
+            href="mailto:ikeshavvarshney@gmail.com"
             className="text-indigo-400 hover:text-indigo-300 transition-colors"
           >
-            [your.email@example.com]
+            ikeshavvarshney@gmail.com
           </a>
         </div>
 

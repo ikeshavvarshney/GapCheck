@@ -1,13 +1,12 @@
 import { NextResponse } from 'next/server'
 
+// Force Node.js runtime — pdf-parse needs Node APIs (Buffer, etc.)
+// and will fail or behave unpredictably on the Edge runtime.
+export const runtime = 'nodejs'
+
 const MAX_FILE_SIZE = 5 * 1024 * 1024 // 5 MB
 const MIN_TEXT_LENGTH = 30
 const ALLOWED_EXTENSIONS = ['.pdf', '.docx']
-const ALLOWED_MIMETYPES = [
-  'application/pdf',
-  'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
-  'application/msword',
-]
 
 function getExtension(filename) {
   const idx = filename.lastIndexOf('.')
@@ -39,7 +38,6 @@ export async function POST(request) {
 
     const filename = file.name || ''
     const ext = getExtension(filename)
-    const mimetype = file.type || ''
 
     // 3. Validate extension
     if (!ALLOWED_EXTENSIONS.includes(ext)) {
@@ -70,8 +68,19 @@ export async function POST(request) {
 
     if (ext === '.pdf') {
       try {
-        // pdf-parse works with a Buffer directly
-        const pdfParse = (await import('pdf-parse')).default
+        // Import the internal lib entry directly rather than the package root.
+        //
+        // WHY: pdf-parse@1.x's top-level index.js runs a readFileSync on a test
+        // fixture at import time (a known debug-mode side-effect). When imported
+        // via ESM dynamic import in Next.js, the CWD is the project root, so
+        // that test file is not found, causing an ENOENT that kills the import
+        // before the parsing function is even returned. Importing lib/pdf-parse.js
+        // directly skips that side-effect entirely.
+        //
+        // Additionally, pdf-parse's CJS module.exports IS the function — not
+        // module.exports.default — so the dynamic import's .default property is
+        // the correct accessor here.
+        const pdfParse = (await import('pdf-parse/lib/pdf-parse.js')).default
         const result = await pdfParse(buffer)
         extractedText = result.text || ''
       } catch (pdfError) {
